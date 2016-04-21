@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +16,30 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.maddyhome.idea.vim.ex;
+package com.maddyhome.idea.vim.ex.vimscript;
 
+import com.intellij.util.containers.hash.HashMap;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
 
 /**
  * @author vlan
  */
-public interface VimScriptCommandHandler {
-  void execute(@NotNull ExCommand cmd) throws ExException;
+public class VimScriptGlobalEnvironment {
+  private static final VimScriptGlobalEnvironment ourInstance = new VimScriptGlobalEnvironment();
+
+  private final Map<String, Object> myVariables = new HashMap<String, Object>();
+
+  private VimScriptGlobalEnvironment() {}
+
+  @NotNull
+  public static VimScriptGlobalEnvironment getInstance() {
+    return ourInstance;
+  }
+
+  @NotNull
+  public Map<String, Object> getVariables() {
+    return myVariables;
+  }
 }

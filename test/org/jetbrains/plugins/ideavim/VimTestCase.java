@@ -1,12 +1,13 @@
 package org.jetbrains.plugins.ideavim;
 
+import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.ide.highlighter.XmlFileType;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.testFramework.LightProjectDescriptor;
-import com.intellij.testFramework.PlatformTestCase;
 import com.intellij.testFramework.UsefulTestCase;
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
@@ -17,10 +18,10 @@ import com.maddyhome.idea.vim.KeyHandler;
 import com.maddyhome.idea.vim.VimPlugin;
 import com.maddyhome.idea.vim.command.CommandState;
 import com.maddyhome.idea.vim.ex.ExOutputModel;
-import com.maddyhome.idea.vim.helper.EditorDataContext;
-import com.maddyhome.idea.vim.helper.RunnableHelper;
-import com.maddyhome.idea.vim.helper.StringHelper;
+import com.maddyhome.idea.vim.ex.vimscript.VimScriptGlobalEnvironment;
+import com.maddyhome.idea.vim.helper.*;
 import com.maddyhome.idea.vim.option.Options;
+import com.maddyhome.idea.vim.option.ToggleOption;
 import com.maddyhome.idea.vim.ui.ExEntryPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,15 +34,7 @@ import java.util.List;
  * @author vlan
  */
 public abstract class VimTestCase extends UsefulTestCase {
-  private static final String ULTIMATE_MARKER_CLASS = "com.intellij.psi.css.CssFile";
   protected CodeInsightTestFixture myFixture;
-
-  public VimTestCase() {
-    // Only in IntelliJ IDEA Ultimate Edition
-    PlatformTestCase.initPlatformLangPrefix();
-    // XXX: IntelliJ IDEA Community and Ultimate 12+
-    //PlatformTestCase.initPlatformPrefix(ULTIMATE_MARKER_CLASS, "PlatformLangXml");
-  }
 
   @Override
   protected void setUp() throws Exception {
@@ -67,8 +60,16 @@ public abstract class VimTestCase extends UsefulTestCase {
   protected void tearDown() throws Exception {
     myFixture.tearDown();
     myFixture = null;
-    ExEntryPanel.getInstance().deactivate();
+    ExEntryPanel.getInstance().deactivate(false);
+    VimScriptGlobalEnvironment.getInstance().getVariables().clear();
     super.tearDown();
+  }
+
+  protected void enableExtensions(@NotNull String... extensionNames) {
+    for (String name : extensionNames) {
+      ToggleOption option = (ToggleOption)Options.getInstance().getOption(name);
+      option.set();
+    }
   }
 
   @NotNull
@@ -84,15 +85,29 @@ public abstract class VimTestCase extends UsefulTestCase {
   }
 
   @NotNull
-  protected Editor typeText(@NotNull final List<KeyStroke> keys) {
+  protected Editor configureByJavaText(@NotNull String content) {
+    myFixture.configureByText(JavaFileType.INSTANCE, content);
+    return myFixture.getEditor();
+  }
+
+  @NotNull
+  protected Editor configureByXmlText(@NotNull String content) {
+    myFixture.configureByText(XmlFileType.INSTANCE, content);
+    return myFixture.getEditor();
+  }
+
+  @NotNull
+  protected Editor typeText(@NotNull List<KeyStroke> keys) {
     final Editor editor = myFixture.getEditor();
     final KeyHandler keyHandler = KeyHandler.getInstance();
     final EditorDataContext dataContext = new EditorDataContext(editor);
     final Project project = myFixture.getProject();
+    TestInputModel.getInstance(editor).setKeyStrokes(keys);
     RunnableHelper.runWriteCommand(project, new Runnable() {
       @Override
       public void run() {
-        for (KeyStroke key : keys) {
+        final TestInputModel inputModel = TestInputModel.getInstance(editor);
+        for (KeyStroke key = inputModel.nextKeyStroke(); key != null; key = inputModel.nextKeyStroke()) {
           final ExEntryPanel exEntryPanel = ExEntryPanel.getInstance();
           if (exEntryPanel.isActive()) {
             exEntryPanel.handleKey(key);
@@ -141,5 +156,11 @@ public abstract class VimTestCase extends UsefulTestCase {
 
   public void assertPluginError(boolean isError) {
     assertEquals(isError, VimPlugin.isError());
+  }
+
+  public void doTest(final List<KeyStroke> keys, String before, String after) {
+    configureByText(before);
+    typeText(keys);
+    myFixture.checkResult(after);
   }
 }

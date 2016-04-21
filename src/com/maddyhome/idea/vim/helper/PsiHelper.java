@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ public class PsiHelper {
     StructureViewBuilder structureViewBuilder = LanguageStructureViewBuilder.INSTANCE.getStructureViewBuilder(file);
     if (!(structureViewBuilder instanceof TreeBasedStructureViewBuilder)) return -1;
     TreeBasedStructureViewBuilder builder = (TreeBasedStructureViewBuilder)structureViewBuilder;
-    StructureViewModel model = builder.createStructureViewModel();
+    StructureViewModel model = builder.createStructureViewModel(editor);
 
     TIntArrayList navigationOffsets = new TIntArrayList();
     addNavigationElements(model.getRoot(), navigationOffsets, isStart);
@@ -109,7 +109,7 @@ public class PsiHelper {
   }
 
   @Nullable
-  private static PsiFile getFile(@NotNull Editor editor) {
+  public static PsiFile getFile(@NotNull Editor editor) {
     VirtualFile vf = EditorData.getVirtualFile(editor);
     if (vf != null) {
       Project proj = editor.getProject();

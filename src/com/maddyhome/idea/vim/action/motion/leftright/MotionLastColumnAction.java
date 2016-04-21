@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ public class MotionLastColumnAction extends MotionEditorAction {
   private static class Handler extends MotionEditorActionHandler {
     public int getOffset(@NotNull Editor editor, DataContext context, int count, int rawCount, Argument argument) {
       boolean allow = false;
-      if (CommandState.inInsertMode(editor) || CommandState.inRepeatMode(editor)) {
+      if (CommandState.inInsertMode(editor)) {
         allow = true;
       }
       else if (CommandState.getInstance(editor).getMode() == CommandState.Mode.VISUAL) {

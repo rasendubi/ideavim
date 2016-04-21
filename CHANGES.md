@@ -4,17 +4,133 @@ The Changelog
 History of changes in IdeaVim for the IntelliJ platform.
 
 
-0.38, TBD
----------
+To Be Released
+--------------
 
+Added `incsearch` option for incremental search. Added support for `it` and
+`at` tag block selection. Added `vim-surround` commands `ys`, `cs`, `ds`,
+`S`. Various bug fixes.
+
+* VIM-769 Added `vim-surround` commands `ys`, `cs`, `ds`, `S`
+* VIM-264 Added tag block selection
+* VIM-271 Added `incsearch` option for showing search results while typing
+* VIM-796 Fixed focus issues with `:action` command
+
+
+0.44, 2015-11-02
+----------------
+
+A bugfix release.
+
+
+* VIM-1040 Fixed typing keys in completion menus and typing with the
+  plugin disabled
+
+
+0.43, 2015-11-02
+----------------
+
+A bugfix release.
+
+* VIM-1039 Fixed running the plugin with Java 6
+
+
+0.42, 2015-11-01
+----------------
+
+This release is compatible with IntelliJ 15+ and other IDEs based on the
+IntelliJ platform branch 143+.
+
+* VIM-970 Fixed move commands in read-only files
+
+
+0.41, 2015-06-10
+----------------
+
+A bugfix release.
+
+* VIM-957 Fixed plugin version 0.40 is not compatible with IDEs other than
+  IntelliJ
+
+
+0.40, 2015-06-09
+----------------
+
+Added support for `mapleader`. Support comments in `%` brace matching. Various
+bug fixes.
+
+Features:
+
+* VIM-650 Added support for `mapleader`
+* VIM-932 Support comments in `%` brace matching
+
+Bug fixes:
+
+* VIM-586 Invoke Vim shortcuts handler later to restore the sequence of input
+  events
+* VIM-838 `J` shouldn't add whitespace if there is a trailing space
+* VIM-855 Fixed regexp character class problem
+* VIM-210 Fix focus issues with the Ex panel and splits
+* VIM-575 Don't change cursor position of other splits in visual mode
+* VIM-864 Fixed visual marks getting changed during visual substitute
+* VIM-856 Fixed regex look-behind problem
+* VIM-868 Allow count on `gt` and `gT`
+* VIM-700 Remapping `0` should still allow it to be entered in command count
+* VIM-781 Fixed expanding visual block selection past empty lines
+* VIM-845 Fixed `c` and `x` functionality for visual block selections
+* VIM-930 Fixed editor focus issues after closing Ex entry box on Oracle Java 6
+
+
+0.39, 2014-12-03
+----------------
+
+A bugfix release.
+
+Bug fixes:
+
+* VIM-848 Show line numbers if they are enabled in the settings and there is
+  no `set number`
+* VIM-702 Fix infinite loop on `s/$/\r/g`
+* EA-63022 Don't update line numbers in the caret movement event listener
+
+
+0.38, 2014-12-01
+----------------
+
+Added support for `number` and `relativenumber` options, `clipboard=unnamed`
+option. Added `:action` and `:actionlist` commands for executing arbitrary
+IDE actions. Various bug fixes.
+
+Features:
+
+* VIM-476 Added support for `clipboard=unnamed` option
+* VIM-410 Added support for `relativenumber` option
+* VIM-483 Added support for `number` option
+* VIM-652 Added `:action` and `:actionlist` commands for executing arbitrary
+  IDE actions
+
+Bug fixes:
+
+* VIM-818 Enable key repeat on Mac OS X every time it gets reset by the OS
 * VIM-624 Deselect visual selection range on opening the Ex entry field
+* VIM-511 Fixed editing offset after `<BS>` for `.` command
+* VIM-792 Fixed line-wise and block-wise paste commands for `*` and `+`
+  registers
+* VIM-501 Fixed off-by-1 error in visual block-wise selection
+* VIM-613 Fixed repeat after `d$`
+* VIM-705 Fixed repeated multiline indent
+* VIM-567 Fixed `:!` to allow running non-filter commands
+* VIM-536 Fixed `cc` on the second-to-last line
+* VIM-515 Fixed `cW` command detecting end-of-word incorrectly
+* VIM-794 Fixed NCDFE related to 'number' in IDEs other than IntelliJ
+* VIM-771 Fix semicolon repeat for 'till char' motion
+* VIM-723 Fix pasting to an empty line
 
 
 0.37, 2014-10-15
 ----------------
 
 A bugfix release.
-
 
 Bug fixes:
 

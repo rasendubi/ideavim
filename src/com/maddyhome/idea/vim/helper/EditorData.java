@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,11 +25,13 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.LightVirtualFile;
+import com.maddyhome.idea.vim.VimPlugin;
 import com.maddyhome.idea.vim.command.CommandState;
 import com.maddyhome.idea.vim.command.SelectionType;
 import com.maddyhome.idea.vim.command.VisualChange;
 import com.maddyhome.idea.vim.common.TextRange;
 import com.maddyhome.idea.vim.ex.ExOutputModel;
+import com.maddyhome.idea.vim.group.MotionGroup;
 import com.maddyhome.idea.vim.ui.ExOutputPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +59,7 @@ public class EditorData {
    *
    * @param editor The editor to cleanup
    */
-  public static void uninitializeEditor(@NotNull Editor editor) {
+  public static void unInitializeEditor(@NotNull Editor editor) {
     if (logger.isDebugEnabled()) logger.debug("editor closed: " + editor);
     editor.putUserData(COMMAND_STATE, null);
     editor.putUserData(LAST_HIGHLIGHTS, null);
@@ -71,7 +73,7 @@ public class EditorData {
   /**
    * This gets the last column the cursor was in for the editor.
    *
-   * @param editor The editr to get the last column from
+   * @param editor The editor to get the last column from
    * @return Returns the last column as set by {@link #setLastColumn} or the current cursor column
    */
   public static int getLastColumn(@NotNull Editor editor) {
@@ -91,9 +93,16 @@ public class EditorData {
    * @param editor The editor
    */
   public static void setLastColumn(@NotNull Editor editor, int col) {
+    boolean previousWasDollar = getLastColumn(editor) >= MotionGroup.LAST_COLUMN;
+    boolean currentIsDollar = col >= MotionGroup.LAST_COLUMN;
+
     editor.putUserData(LAST_COLUMN, col);
     int t = getLastColumn(editor);
     if (logger.isDebugEnabled()) logger.debug("setLastColumn(" + col + ") is now " + t);
+
+    if (previousWasDollar != currentIsDollar && CommandState.inVisualBlockMode(editor)) {
+      VimPlugin.getMotion().updateSelection(editor);
+    }
   }
 
   @Nullable
@@ -187,6 +196,22 @@ public class EditorData {
     editor.putUserData(MOTION_GROUP, adapter);
   }
 
+  public static boolean getEditorGroup(@NotNull Editor editor) {
+    return editor.getUserData(EDITOR_GROUP) == Boolean.TRUE;
+  }
+
+  public static void setEditorGroup(@NotNull Editor editor, boolean value) {
+    editor.putUserData(EDITOR_GROUP, value);
+  }
+
+  public static boolean isLineNumbersShown(@NotNull Editor editor) {
+    return editor.getUserData(LINE_NUMBERS_SHOWN) == Boolean.TRUE;
+  }
+
+  public static void setLineNumbersShown(@NotNull Editor editor, boolean value) {
+    editor.putUserData(LINE_NUMBERS_SHOWN, value);
+  }
+
   public static boolean isConsoleOutput(@NotNull Editor editor) {
     Object res = editor.getUserData(CONSOLE_VIEW_IN_EDITOR_VIEW);
     logger.debug("isConsoleOutput for editor " + editor + " - " + res);
@@ -238,8 +263,11 @@ public class EditorData {
   private static final Key<CommandState> COMMAND_STATE = new Key<CommandState>("commandState");
   private static final Key<Boolean> CHANGE_GROUP = new Key<Boolean>("changeGroup");
   private static final Key<Boolean> MOTION_GROUP = new Key<Boolean>("motionGroup");
+  public static final Key<Boolean> EDITOR_GROUP = new Key<Boolean>("editorGroup");
+  public static final Key<Boolean> LINE_NUMBERS_SHOWN = new Key<Boolean>("lineNumbersShown");
   private static final Key<ExOutputPanel> MORE_PANEL = new Key<ExOutputPanel>("IdeaVim.morePanel");
   private static final Key<ExOutputModel> EX_OUTPUT_MODEL = new Key<ExOutputModel>("IdeaVim.exOutputModel");
+  private static final Key<TestInputModel> TEST_INPUT_MODEL = new Key<TestInputModel>("IdeaVim.testInputModel");
 
   private static Key CONSOLE_VIEW_IN_EDITOR_VIEW = Key.create("CONSOLE_VIEW_IN_EDITOR_VIEW");
 
@@ -258,8 +286,8 @@ public class EditorData {
       // coded such that two keys with the same name are treated as different keys - oh well.
       // This code will work as long as the key I need is the first one in the ConsoleViewImpl.
       Class cvi = Class.forName("com.intellij.execution.impl.ConsoleViewImpl");
-      Field[] flds = cvi.getDeclaredFields();
-      for (Field f : flds) {
+      Field[] fields = cvi.getDeclaredFields();
+      for (Field f : fields) {
         if (f.getType().equals(Key.class)) {
           f.setAccessible(true);
           CONSOLE_VIEW_IN_EDITOR_VIEW = (Key)f.get(null);
@@ -276,10 +304,19 @@ public class EditorData {
   }
 
   /**
-   * Checks if editor is file editor, also it takes into account that editor can be placed in editors hierarhy
+   * Checks if editor is file editor, also it takes into account that editor can be placed in editors hierarchy
    */
   public static boolean isFileEditor(@NotNull Editor editor){
     final VirtualFile virtualFile = EditorData.getVirtualFile(editor);
     return virtualFile != null && !(virtualFile instanceof LightVirtualFile);
+  }
+
+  @Nullable
+  public static TestInputModel getTestInputModel(@NotNull Editor editor) {
+    return editor.getUserData(TEST_INPUT_MODEL);
+  }
+
+  public static void setTestInputModel(@NotNull Editor editor, @NotNull TestInputModel model) {
+    editor.putUserData(TEST_INPUT_MODEL, model);
   }
 }

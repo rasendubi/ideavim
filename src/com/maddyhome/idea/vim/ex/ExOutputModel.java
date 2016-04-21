@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ public class ExOutputModel {
   public void clear() {
     myText = null;
     if (!ApplicationManager.getApplication().isUnitTestMode()) {
-      ExOutputPanel.getInstance(myEditor).deactivate();
+      ExOutputPanel.getInstance(myEditor).deactivate(false);
     }
   }
 

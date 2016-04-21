@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@ package com.maddyhome.idea.vim.ex.handler;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Editor;
 import com.maddyhome.idea.vim.ex.*;
+import com.maddyhome.idea.vim.ex.vimscript.VimScriptCommandHandler;
+import com.maddyhome.idea.vim.ex.vimscript.VimScriptParser;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;

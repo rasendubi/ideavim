@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -162,7 +162,10 @@ public class CopyGroup {
         }
       }
       else {
-        pos = editor.getCaretModel().getOffset() + 1;
+        pos = editor.getCaretModel().getOffset();
+        if (!EditorHelper.isLineEmpty(editor, editor.getCaretModel().getLogicalPosition().line, false)) {
+          pos++;
+        }
       }
       // In case when text is empty this can occur
       if (pos > 0 && pos > editor.getDocument().getTextLength()) {
@@ -436,9 +439,7 @@ public class CopyGroup {
         break;
     }
 
-    final MarkGroup markGroup = VimPlugin.getMark();
-    markGroup.setMark(editor, '[', offset);
-    markGroup.setMark(editor, ']', endOffset);
+    VimPlugin.getMark().setChangeMarks(editor, new TextRange(offset, endOffset));
   }
 
   private static final Logger logger = Logger.getInstance(CopyGroup.class.getName());

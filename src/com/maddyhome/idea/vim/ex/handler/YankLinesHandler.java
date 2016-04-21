@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import com.maddyhome.idea.vim.common.TextRange;
 import com.maddyhome.idea.vim.ex.CommandHandler;
 import com.maddyhome.idea.vim.ex.ExCommand;
 import com.maddyhome.idea.vim.ex.ExException;
-import com.maddyhome.idea.vim.group.RegisterGroup;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -39,7 +38,7 @@ public class YankLinesHandler extends CommandHandler {
 
   public boolean execute(@NotNull Editor editor, @NotNull DataContext context, @NotNull ExCommand cmd) throws ExException {
     StringBuilder arg = new StringBuilder(cmd.getArgument());
-    char register = RegisterGroup.REGISTER_DEFAULT;
+    char register = VimPlugin.getRegister().getDefaultRegister();
     if (arg.length() > 0 && (arg.charAt(0) < '0' || arg.charAt(0) > '9')) {
       register = arg.charAt(0);
       arg.deleteCharAt(0);

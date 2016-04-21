@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.TypedActionHandler;
+import com.maddyhome.idea.vim.helper.EditorDataContext;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -53,7 +54,7 @@ public class VimTypedActionHandler implements TypedActionHandler {
         @Override
         public void run() {
           try {
-            handler.handleKey(editor, KeyStroke.getKeyStroke(charTyped), context);
+            handler.handleKey(editor, KeyStroke.getKeyStroke(charTyped), new EditorDataContext(editor));
           }
           catch (Throwable e) {
             logger.error(e);

@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ import com.maddyhome.idea.vim.command.Argument;
 import com.maddyhome.idea.vim.command.Command;
 import com.maddyhome.idea.vim.command.CommandState;
 import com.maddyhome.idea.vim.command.MappingMode;
+import com.maddyhome.idea.vim.extension.VimExtensionHandler;
 import com.maddyhome.idea.vim.group.RegisterGroup;
 import com.maddyhome.idea.vim.helper.*;
 import com.maddyhome.idea.vim.key.*;
@@ -111,28 +112,28 @@ public class KeyHandler {
     editor = InjectedLanguageUtil.getTopLevelEditor(editor);
     final CommandState editorState = CommandState.getInstance(editor);
 
-    if (allowKeyMappings && handleKeyMapping(editor, key, context)) {
-      return;
-    }
-
-    final boolean isRecording = editorState.isRecording();
-    boolean shouldRecord = true;
     // If this is a "regular" character keystroke, get the character
     char chKey = key.getKeyChar() == KeyEvent.CHAR_UNDEFINED ? 0 : key.getKeyChar();
 
-    if (isEditorReset(key, editorState)) {
-      handleEditorReset(editor, key, context);
-    }
-    // At this point the user must be typing in a command. Most commands can be preceded by a number. Let's
-    // check if a number can be entered at this point, and if so, did the user send us a digit.
-    else if (isCommandCount(editorState, chKey)) {
+    final boolean isRecording = editorState.isRecording();
+    boolean shouldRecord = true;
+
+    // Check for command count before key mappings - otherwise e.g. ':map 0 ^' breaks command counts that contain a zero
+    if (isCommandCount(editorState, chKey)) {
       // Update the count
       count = count * 10 + (chKey - '0');
     }
+    else if (allowKeyMappings && handleKeyMapping(editor, key, context)) {
+      return;
+    }
     // Pressing delete while entering a count "removes" the last digit entered
+    // Unlike the digits, this must be checked *after* checking for key mappings
     else if (isDeleteCommandCount(key, editorState)) {
       // "Remove" the last digit sent to us
       count /= 10;
+    }
+    else if (isEditorReset(key, editorState)) {
+      handleEditorReset(editor, key, context);
     }
     // If we got this far the user is entering a command or supplying an argument to an entered command.
     // First let's check to see if we are at the point of expecting a single character argument to a command.
@@ -252,12 +253,24 @@ public class KeyHandler {
       final Runnable handleMappedKeys = new Runnable() {
         @Override
         public void run() {
-          final boolean fromIsPrefix = isPrefix(mappingInfo.getFromKeys(), mappingInfo.getToKeys());
-          boolean first = true;
-          for (KeyStroke keyStroke : mappingInfo.getToKeys()) {
-            final boolean recursive = mappingInfo.isRecursive() && !(first && fromIsPrefix);
-            handleKey(editor, keyStroke, new EditorDataContext(editor), recursive);
-            first = false;
+          final List<KeyStroke> toKeys = mappingInfo.getToKeys();
+          final VimExtensionHandler extensionHandler = mappingInfo.getExtensionHandler();
+          if (toKeys != null) {
+            final boolean fromIsPrefix = isPrefix(mappingInfo.getFromKeys(), toKeys);
+            boolean first = true;
+            for (KeyStroke keyStroke : toKeys) {
+              final boolean recursive = mappingInfo.isRecursive() && !(first && fromIsPrefix);
+              handleKey(editor, keyStroke, new EditorDataContext(editor), recursive);
+              first = false;
+            }
+          }
+          else if (extensionHandler != null) {
+            RunnableHelper.runWriteCommand(editor.getProject(), new Runnable() {
+              @Override
+              public void run() {
+                extensionHandler.execute(editor, context);
+              }
+            }, "Vim " + extensionHandler.getClass().getSimpleName(), null);
           }
         }
       };
@@ -292,17 +305,19 @@ public class KeyHandler {
   }
 
   private void handleEditorReset(@NotNull Editor editor, @NotNull KeyStroke key, @NotNull final DataContext context) {
-    if (state != State.COMMAND && count == 0 && currentArg == Argument.Type.NONE && currentCmd.size() == 0 &&
-        VimPlugin.getRegister().getCurrentRegister() == RegisterGroup.REGISTER_DEFAULT) {
-      if (key.getKeyCode() == KeyEvent.VK_ESCAPE) {
-        CommandProcessor.getInstance().executeCommand(editor.getProject(), new Runnable() {
-          @Override
-          public void run() {
-            KeyHandler.executeAction("EditorEscape", context);
-          }
-        }, "", null);
+    if (state != State.COMMAND && count == 0 && currentArg == Argument.Type.NONE && currentCmd.size() == 0) {
+      RegisterGroup register = VimPlugin.getRegister();
+      if (register.getCurrentRegister() == register.getDefaultRegister()) {
+        if (key.getKeyCode() == KeyEvent.VK_ESCAPE) {
+          CommandProcessor.getInstance().executeCommand(editor.getProject(), new Runnable() {
+            @Override
+            public void run() {
+              KeyHandler.executeAction("EditorEscape", context);
+            }
+          }, "", null);
+        }
+        VimPlugin.indicateError();
       }
-      VimPlugin.indicateError();
     }
     reset(editor);
   }
@@ -322,9 +337,7 @@ public class KeyHandler {
 
   private boolean isEditorReset(@NotNull KeyStroke key, @NotNull CommandState editorState) {
     return (editorState.getMode() == CommandState.Mode.COMMAND || state == State.COMMAND) &&
-           (key.getKeyCode() == KeyEvent.VK_ESCAPE ||
-            (key.getKeyCode() == KeyEvent.VK_C && (key.getModifiers() & KeyEvent.CTRL_MASK) != 0) ||
-            (key.getKeyCode() == '[' && (key.getModifiers() & KeyEvent.CTRL_MASK) != 0));
+           StringHelper.isCloseKeyStroke(key);
   }
 
   private void handleCharArgument(@NotNull KeyStroke key, char chKey) {
@@ -560,12 +573,10 @@ public class KeyHandler {
    * @param name    The name of the action to execute
    * @param context The context to run it in
    */
-  public static void executeAction(@NotNull String name, @NotNull DataContext context) {
+  public static boolean executeAction(@NotNull String name, @NotNull DataContext context) {
     ActionManager aMgr = ActionManager.getInstance();
     AnAction action = aMgr.getAction(name);
-    if (action != null) {
-      executeAction(action, context);
-    }
+    return action != null && executeAction(action, context);
   }
 
   /**
@@ -574,16 +585,20 @@ public class KeyHandler {
    * @param action  The action to execute
    * @param context The context to run it in
    */
-  public static void executeAction(@NotNull AnAction action, @NotNull DataContext context) {
+  public static boolean executeAction(@NotNull AnAction action, @NotNull DataContext context) {
     // Hopefully all the arguments are sufficient. So far they all seem to work OK.
     // We don't have a specific InputEvent so that is null
     // What is "place"? Leave it the empty string for now.
     // Is the template presentation sufficient?
     // What are the modifiers? Is zero OK?
-    action.actionPerformed(
-      new AnActionEvent(null, context, "", action.getTemplatePresentation(), ActionManager.getInstance(),
-                        // API change - don't merge
-                        0));
+    final AnActionEvent event = new AnActionEvent(null, context, "", action.getTemplatePresentation(),
+                                                  ActionManager.getInstance(), 0);
+    action.update(event);
+    if (event.getPresentation().isEnabled()) {
+      action.actionPerformed(event);
+      return true;
+    }
+    return false;
   }
 
   /**

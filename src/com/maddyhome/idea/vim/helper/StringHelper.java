@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ package com.maddyhome.idea.vim.helper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.intellij.openapi.util.text.StringUtil;
+import com.maddyhome.idea.vim.ex.vimscript.VimScriptGlobalEnvironment;
 import org.apache.commons.codec.binary.Base64;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +45,10 @@ public class StringHelper {
     .put("return", VK_ENTER)
     .put("ins", VK_INSERT)
     .put("insert", VK_INSERT)
+    .put("home", VK_HOME)
+    .put("end", VK_END)
+    .put("pageup", VK_PAGE_UP)
+    .put("pagedown", VK_PAGE_DOWN)
     .put("del", VK_DELETE)
     .put("delete", VK_DELETE)
     .put("esc", VK_ESCAPE)
@@ -70,9 +75,10 @@ public class StringHelper {
   private static final Map<Integer, String> VIM_KEY_VALUES = invertMap(VIM_KEY_NAMES);
 
   private static final Map<String, Character> VIM_TYPED_KEY_NAMES = ImmutableMap.<String, Character>builder()
-    .put("leader", '\\')
     .put("space", ' ')
     .put("bar", '|')
+    .put("bslash", '\\')
+    .put("lt", '<')
     .build();
 
   private static final Set<String> UPPERCASE_DISPLAY_KEY_NAMES = ImmutableSet.<String>builder()
@@ -121,7 +127,7 @@ public class StringHelper {
     return res;
   }
 
-  private static enum KeyParserState {
+  private enum KeyParserState {
     INIT,
     ESCAPE,
     SPECIAL,
@@ -183,8 +189,12 @@ public class StringHelper {
                 throw new IllegalArgumentException("<" + specialKeyName + "> is not supported");
               }
               if (!"nop".equals(lower)) {
+                final List<KeyStroke> leader = parseMapLeader(specialKeyName);
                 final KeyStroke specialKey = parseSpecialKey(specialKeyName, 0);
-                if (specialKey != null) {
+                if (leader != null) {
+                  result.addAll(leader);
+                }
+                else if (specialKey != null) {
                   result.add(specialKey);
                 }
                 else {
@@ -209,6 +219,20 @@ public class StringHelper {
       }
     }
     return result;
+  }
+
+  @Nullable
+  private static List<KeyStroke> parseMapLeader(@NotNull String s) {
+    if ("leader".equals(s.toLowerCase())) {
+      final Object mapLeader = VimScriptGlobalEnvironment.getInstance().getVariables().get("mapleader");
+      if (mapLeader instanceof String) {
+        return stringToKeys((String)mapLeader);
+      }
+      else {
+        return stringToKeys("\\");
+      }
+    }
+    return null;
   }
 
   private static boolean isControlCharacter(char c) {
@@ -288,6 +312,13 @@ public class StringHelper {
     }
 
     return false;
+  }
+
+  public static boolean isCloseKeyStroke(@NotNull KeyStroke key) {
+    return key.getKeyCode() == VK_ESCAPE ||
+           key.getKeyChar() == VK_ESCAPE ||
+           key.getKeyCode() == VK_C && (key.getModifiers() & CTRL_MASK) != 0 ||
+           key.getKeyCode() == '[' && (key.getModifiers() & CTRL_MASK) != 0;
   }
 
   /**

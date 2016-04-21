@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ package com.maddyhome.idea.vim.command;
 
 import com.intellij.openapi.editor.Editor;
 import com.maddyhome.idea.vim.VimPlugin;
-import com.maddyhome.idea.vim.group.RegisterGroup;
 import com.maddyhome.idea.vim.helper.EditorData;
 import com.maddyhome.idea.vim.key.ParentNode;
 import com.maddyhome.idea.vim.option.NumberOption;
@@ -38,7 +37,7 @@ public class CommandState {
   public static final int DEFAULT_TIMEOUT_LENGTH = 1000;
 
   @Nullable private static Command ourLastChange = null;
-  private static char ourLastRegister = RegisterGroup.REGISTER_DEFAULT;
+  private char myLastChangeRegister;
 
   @NotNull private final Stack<State> myStates = new Stack<State>();
   @NotNull private final State myDefaultState = new State(Mode.COMMAND, SubMode.NONE, MappingMode.NORMAL);
@@ -53,6 +52,7 @@ public class CommandState {
     myMappingTimer = new Timer(DEFAULT_TIMEOUT_LENGTH, null);
     myMappingTimer.setRepeats(false);
     myStates.push(new State(Mode.COMMAND, SubMode.NONE, MappingMode.NORMAL));
+    myLastChangeRegister = VimPlugin.getRegister().getDefaultRegister();
   }
 
   @NotNull
@@ -83,6 +83,11 @@ public class CommandState {
   public static boolean inVisualCharacterMode(@Nullable Editor editor) {
     final CommandState state = getInstance(editor);
     return state.getMode() == Mode.VISUAL && state.getSubMode() == SubMode.VISUAL_CHARACTER;
+  }
+
+  public static boolean inVisualBlockMode(@Nullable Editor editor) {
+    final CommandState state = getInstance(editor);
+    return state.getMode() == Mode.VISUAL && state.getSubMode() == SubMode.VISUAL_BLOCK;
   }
 
   @Nullable
@@ -255,7 +260,7 @@ public class CommandState {
    * @return The register key
    */
   public char getLastChangeRegister() {
-    return ourLastRegister;
+    return myLastChangeRegister;
   }
 
   /**
@@ -265,7 +270,7 @@ public class CommandState {
    */
   public void saveLastChangeCommand(Command cmd) {
     ourLastChange = cmd;
-    ourLastRegister = VimPlugin.getRegister().getCurrentRegister();
+    myLastChangeRegister = VimPlugin.getRegister().getCurrentRegister();
   }
 
   public boolean isRecording() {
@@ -311,7 +316,7 @@ public class CommandState {
     VimPlugin.showMode(msg.toString());
   }
 
-  public static enum Mode {
+  public enum Mode {
     COMMAND,
     INSERT,
     REPLACE,
@@ -320,7 +325,7 @@ public class CommandState {
     EX_ENTRY
   }
 
-  public static enum SubMode {
+  public enum SubMode {
     NONE,
     SINGLE_COMMAND,
     VISUAL_CHARACTER,

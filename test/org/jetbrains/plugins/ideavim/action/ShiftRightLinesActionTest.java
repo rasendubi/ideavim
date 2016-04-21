@@ -52,4 +52,34 @@ public class ShiftRightLinesActionTest extends VimTestCase {
     typeText(parseKeys("vG$>>"));
     myFixture.checkResult("    Hello,\n    world!\n\n");
   }
+
+  public void testShiftsMultiLineSelectionSkipsNewlineWhenCursorNotInFirstColumn() {
+    myFixture.configureByText("a.txt", "<caret>Hello,\n\nworld!\n");
+    typeText(parseKeys("lVG>"));
+    myFixture.checkResult("    Hello,\n\n    world!\n");
+  }
+
+  public void testShiftsMultiLineSelectionAddsTrailingWhitespaceIfTherePreviouslyWas() {
+    myFixture.configureByText("a.txt", "<caret>Hello,\n    \nworld!\n");
+    typeText(parseKeys("lVG>"));
+    myFixture.checkResult("    Hello,\n        \n    world!\n");
+  }
+
+  // VIM-705 repeating a multiline indent would only affect last line
+  public void testShiftsMultiLineSelectionRepeat() {
+    myFixture.configureByText("a.txt", "<caret>a\nb\n");
+    typeText(parseKeys("Vj>."));
+    myFixture.checkResult("        a\n        b\n");
+  }
+
+  public void testShiftsDontCrashKeyHandler() {
+    myFixture.configureByText("a.txt", "\n");
+    typeText(parseKeys("<I<>", "<I<>"));
+  }
+
+  public void testShiftsVisualBlockMode() {
+    myFixture.configureByText("a.txt", "foo<caret>foo\nfoobar\nfoobaz\n");
+    typeText(parseKeys("<C-V>jjl>"));
+    myFixture.checkResult("foo    foo\nfoo    bar\nfoo    baz\n");
+  }
 }

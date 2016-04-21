@@ -1,6 +1,6 @@
 /*
  * IdeaVim - Vim emulator for IDEs based on the IntelliJ platform
- * Copyright (C) 2003-2014 The IdeaVim authors
+ * Copyright (C) 2003-2016 The IdeaVim authors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,6 +147,10 @@ public class RegisterActions {
         new Shortcut("a<"),
         new Shortcut("a>")
       });
+    parser.registerAction(MappingMode.VO, "VimMotionInnerBlockTag", Command.Type.MOTION,
+                          Command.FLAG_MOT_CHARACTERWISE | Command.FLAG_MOT_INCLUSIVE | Command.FLAG_TEXT_BLOCK,
+                          new Shortcut[]{new Shortcut("it")}
+    );
     parser.registerAction(MappingMode.VO, "VimMotionOuterBlockBrace", Command.Type.MOTION,
                           Command.FLAG_MOT_CHARACTERWISE | Command.FLAG_MOT_INCLUSIVE | Command.FLAG_TEXT_BLOCK,
                           new Shortcut[]{new Shortcut("aB"), new Shortcut("a{"), new Shortcut("a}")}
@@ -171,6 +175,10 @@ public class RegisterActions {
                           Command.FLAG_MOT_CHARACTERWISE | Command.FLAG_MOT_INCLUSIVE | Command.FLAG_TEXT_BLOCK, new Shortcut[]{
       new Shortcut("a`"),
     });
+    parser.registerAction(MappingMode.VO, "VimMotionOuterBlockTag", Command.Type.MOTION,
+                          Command.FLAG_MOT_CHARACTERWISE | Command.FLAG_MOT_INCLUSIVE | Command.FLAG_TEXT_BLOCK,
+                          new Shortcut[]{new Shortcut("at")}
+    );
     parser.registerAction(MappingMode.NO, "VimResetMode", Command.Type.RESET, new Shortcut(new KeyStroke[]{
       KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SLASH, KeyEvent.CTRL_MASK),
       KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_MASK)
@@ -630,11 +638,11 @@ public class RegisterActions {
                           new Shortcut("=="));
     parser.registerAction(MappingMode.N, "VimShiftLeftLines", Command.Type.CHANGE,
                           new Shortcut("<<"));
-    parser.registerAction(MappingMode.N, "VimShiftLeftMotion", Command.Type.CHANGE,
+    parser.registerAction(MappingMode.N, "VimShiftLeftMotion", Command.Type.CHANGE, Command.FLAG_OP_PEND,
                           new Shortcut('<'), Argument.Type.MOTION);
     parser.registerAction(MappingMode.N, "VimShiftRightLines", Command.Type.CHANGE,
                           new Shortcut(">>"));
-    parser.registerAction(MappingMode.N, "VimShiftRightMotion", Command.Type.CHANGE,
+    parser.registerAction(MappingMode.N, "VimShiftRightMotion", Command.Type.CHANGE, Command.FLAG_OP_PEND,
                           new Shortcut('>'), Argument.Type.MOTION);
 
     // Jump Actions
@@ -722,11 +730,11 @@ public class RegisterActions {
                           new Shortcut(KeyStroke.getKeyStroke(KeyEvent.VK_END, KeyEvent.CTRL_MASK)));
     parser.registerAction(MappingMode.I, "VimMotionLastColumn", Command.Type.INSERT, Command.FLAG_SAVE_STROKE,
                           new Shortcut(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0)));
-    parser.registerAction(MappingMode.I, "VimMotionLeft", Command.Type.INSERT, Command.FLAG_SAVE_STROKE, new Shortcut[]{
+    parser.registerAction(MappingMode.I, "VimMotionLeft", Command.Type.INSERT, new Shortcut[]{
       new Shortcut(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0)),
       new Shortcut(KeyStroke.getKeyStroke(KeyEvent.VK_KP_LEFT, 0))
     });
-    parser.registerAction(MappingMode.I, "VimMotionRight", Command.Type.INSERT, Command.FLAG_SAVE_STROKE, new Shortcut[]{
+    parser.registerAction(MappingMode.I, "VimMotionRight", Command.Type.INSERT, new Shortcut[]{
       new Shortcut(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0)),
       new Shortcut(KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, 0))
     });
